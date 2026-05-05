@@ -25,7 +25,7 @@ const sessionTimes = [
 ];
 
 // 🧪 Test time
-const testTime = "00:27";
+const testTime = "00:30";
 
 // 🌐 API
 const API_URL = "https://api.bdg88zf.com/api/webapi/GetGameIssue";
@@ -158,4 +158,4 @@ setInterval(async () => {
         console.log("Loop Error:", err.message);
     }
 
-}, 10000); // check every 10 sec
+}, 64000); // check every 64 sec
