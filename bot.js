@@ -34,7 +34,7 @@ const resultSessions = [
 ];
 
 // 🧪 Test time
-const testTime = "15:31";
+const testTime = "15:34";
 
 // ⏱ Delay
 const resultDelay = 62000;
@@ -172,7 +172,7 @@ setInterval(async () => {
         testSent = true;
     }
 
-}, 60000);${generateShots()}
+}, 60000);
 
 🚀 *NEW USER REGISTER FAST*
 `;
@@ -226,7 +226,7 @@ setInterval(async () => {
         }
     }
 
-    // 🔹 Test (15:31 only once)
+    // 🔹 Test (15:34 only once)
     if (currentTime === testTime && !testSent) {
 
         const period = await getPeriod();
