@@ -2,18 +2,18 @@ const TelegramBot = require('node-telegram-bot-api');
 const config = require('./config');
 const express = require("express");
 
-// 🔹 Bot
+// 🔹 Bot init
 const bot = new TelegramBot(config.token, { polling: false });
 
-// 🔹 Server
+// 🔹 Keep Railway alive
 const app = express();
 app.get("/", (req, res) => res.send("Bot running"));
 app.listen(3000);
 
-// 🔗 Register link
+// 🔗 Link
 const link = "https://www.jaiclub04.com/#/register?invitationCode=376641278237";
 
-// ⏱ Daily Times (IST)
+// ⏱ Times (IST)
 const sessionTimes = [
     "09:30",
     "11:30",
@@ -24,25 +24,17 @@ const sessionTimes = [
     "21:30"
 ];
 
-// 🎯 Result sessions
-const resultSessions = [
-    "13:00",
-    "15:00",
-    "17:00",
-    "19:30",
-    "21:30"
-];
-
 // 🧪 Test time (change anytime)
-const testTime = "00:07";
-
-// ⏱ Delay
-const resultDelay = 62000;
+const testTime = "23:40";
 
 // 🌐 API
 const API_URL = "https://api.bdg88zf.com/api/webapi/GetGameIssue";
 
-// ✅ Safe Period Fetch
+// 🧠 TRACKING (only once)
+let sentToday = {};
+let testSent = false;
+
+// ✅ SAFE PERIOD (last 3 digits)
 async function getPeriod() {
     try {
         const res = await fetch(API_URL, {
@@ -61,46 +53,112 @@ async function getPeriod() {
 
         try {
             const data = JSON.parse(text);
-            let issue = data?.data?.issueNumber || "0000";
-            return issue.toString().slice(-4);
+            let issue = data?.data?.issueNumber || "000";
+            return issue.toString().slice(-3);
         } catch {
-            return Math.floor(1000 + Math.random() * 9000);
+            return Math.floor(100 + Math.random() * 900);
         }
 
     } catch {
-        return Math.floor(1000 + Math.random() * 9000);
+        return Math.floor(100 + Math.random() * 900);
     }
 }
 
-// 🎯 Generate Shots
-function generateShots() {
-    let shots = [];
+// 🎯 SINGLE SHOT (NO SAME NUMBER + BOLD FORMAT)
+function generateOneShot() {
 
-    for (let i = 0; i < 6; i++) {
-        let isBig = Math.random() > 0.5;
+    let isBig = Math.random() > 0.5;
+    let num1, num2;
 
-        let num1 = isBig ? Math.floor(Math.random() * 5) + 5 : Math.floor(Math.random() * 5);
-        let num2 = isBig ? Math.floor(Math.random() * 5) + 5 : Math.floor(Math.random() * 5);
-
-        shots.push(
-`${i + 1}. ${isBig ? "🔵 BIG" : "🟠 SMALL"} → ${num1}, ${num2}
-👉 https://www.jaiclub04.com/#/register?invitationCode=376641278237`
-        );
+    if (isBig) {
+        num1 = Math.floor(Math.random() * 5) + 5;
+        do {
+            num2 = Math.floor(Math.random() * 5) + 5;
+        } while (num1 === num2);
+    } else {
+        num1 = Math.floor(Math.random() * 5);
+        do {
+            num2 = Math.floor(Math.random() * 5);
+        } while (num1 === num2);
     }
 
-    return shots.join("\n\n");
+    return `**BET ON = ${isBig ? "BIG" : "SMALL"} → ${num1}, ${num2}**`;
 }
 
-// 📤 Send Prediction
+// 📤 SEND MULTIPLE MESSAGES (6–8 TIMES)
 async function sendSession(period) {
-    const msg = `
-🔥 *VIP PREDICTION* 🔥
-⏱ *WINGO 1 MINUTE*
 
-🧾 *Period: ${period}*
+    const totalShots = 6; // change to 7 or 8 if needed
 
-${generateShots()}
+    for (let i = 0; i < totalShots; i++) {
 
+        const msg = `
+🔥 VIP PREDICTION 🔥
+⏱ WINGO 1 MINUTE
+
+🧾 Period: ${period}
+${generateOneShot()}
+
+**REGISTER NOW**
+${link}
+`;
+
+        try {
+            await bot.sendMessage(config.channel, msg, {
+                parse_mode: "Markdown"
+            });
+        } catch (e) {
+            console.log("Send Error:", e.message);
+        }
+
+        // delay between each message (2 sec)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+}
+
+// 🔁 MAIN LOOP (FAST + STABLE)
+setInterval(async () => {
+
+    try {
+
+        const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+        const date = new Date(now);
+
+        const currentTime =
+            date.getHours().toString().padStart(2, '0') + ":" +
+            date.getMinutes().toString().padStart(2, '0');
+
+        const today = date.toDateString();
+
+        if (!sentToday[today]) {
+            sentToday[today] = {};
+        }
+
+        console.log("Time:", currentTime);
+
+        // 🔹 DAILY
+        if (sessionTimes.includes(currentTime) && !sentToday[today][currentTime]) {
+
+            const period = await getPeriod();
+            await sendSession(period);
+
+            sentToday[today][currentTime] = true;
+        }
+
+        // 🔹 TEST (only once)
+        if (currentTime === testTime && !testSent) {
+
+            const period = await getPeriod();
+            await sendSession(period);
+
+            testSent = true;
+        }
+
+    } catch (err) {
+        console.log("Loop Error:", err.message);
+    }
+
+}, 10000); // check every 10 sec
 🚀 *NEW USER REGISTER FAST*
 `;
 
