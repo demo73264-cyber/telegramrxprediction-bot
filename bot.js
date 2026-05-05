@@ -16,7 +16,7 @@ app.listen(3000);
 const link = "https://www.jaiclub04.com/#/register?invitationCode=376641278237";
 
 // ⏱ Fixed session times
-const sessionTimes = ["09:30","11:00","13:00","14:26","16:30","19:00","21:00"];
+const sessionTimes = ["09:30","11:00","13:00","14:30","16:30","19:00","21:00"];
 
 // 🎯 Result sessions
 const resultSessions = ["13:00","14:30","16:30","19:00"];
