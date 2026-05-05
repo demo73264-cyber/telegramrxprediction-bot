@@ -16,7 +16,7 @@ const DAILY_TIMES = [
 ];
 
 // TEST TIME (change anytime)
-const TEST_TIME = "05:23";
+const TEST_TIME = "05:27";
 
 // How many predictions per session
 const SHOTS_PER_SESSION = 6;
