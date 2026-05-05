@@ -25,7 +25,7 @@ const sessionTimes = [
 ];
 
 // 🧪 Test time
-const testTime = "00:30";
+const testTime = "05:00";
 
 // 🌐 API
 const API_URL = "https://api.bdg88zf.com/api/webapi/GetGameIssue";
