@@ -5,15 +5,15 @@ const express = require("express");
 // 🔹 Bot
 const bot = new TelegramBot(config.token, { polling: false });
 
-// 🔹 Server (Railway keep alive)
+// 🔹 Server
 const app = express();
 app.get("/", (req, res) => res.send("Bot running"));
 app.listen(3000);
 
-// 🔗 Register link
+// 🔗 Link
 const link = "https://www.jaiclub04.com/#/register?invitationCode=376641278237";
 
-// ⏱ DAILY TIMES (IST)
+// ⏱ Daily Times (IST)
 const sessionTimes = [
     "09:30",
     "11:30",
@@ -24,7 +24,7 @@ const sessionTimes = [
     "21:30"
 ];
 
-// 🎯 Sessions with auto result
+// 🎯 Result sessions
 const resultSessions = [
     "13:00",
     "15:00",
@@ -33,10 +33,10 @@ const resultSessions = [
     "21:30"
 ];
 
-// 🧪 TODAY TEST TIME (only once)
-const testTime = "14:49";
+// 🧪 TEST TIME (TODAY ONLY)
+const testTime = "14:55";
 
-// ⏱ Result delay (62 sec)
+// ⏱ Delay
 const resultDelay = 62000;
 
 // 🌐 API
@@ -104,7 +104,6 @@ ${generateShots()}
 
 🚀 *NEW USER REGISTER FAST*
 `;
-
     bot.sendMessage(config.channel, msg, { parse_mode: "Markdown" });
 }
 
@@ -119,14 +118,14 @@ function sendResult(period) {
     bot.sendMessage(config.channel, msg, { parse_mode: "Markdown" });
 }
 
-// 🧠 Tracking
+// 🧠 Tracking (ONLY ONCE)
 let sentToday = {};
 let testSent = false;
 
-// 🔁 MAIN LOOP
+// 🔁 LOOP
 setInterval(async () => {
 
-    // ✅ IST TIME
+    // IST TIME
     const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
     const date = new Date(now);
 
@@ -137,76 +136,33 @@ setInterval(async () => {
     const today = date.toDateString();
 
     if (!sentToday[today]) {
-        sentToday = {};
+        sentToday[today] = {};
     }
 
     console.log("Time:", currentTime);
 
-    // 🔹 DAILY SESSIONS
-    if (sessionTimes.includes(currentTime) && !sentToday[currentTime]) {
+    // 🔹 Daily
+    if (sessionTimes.includes(currentTime) && !sentToday[today][currentTime]) {
 
         const period = await getPeriod();
 
-        sendSession(period);
-        sentToday[currentTime] = true;
+        await sendSession(period);
+        sentToday[today][currentTime] = true;
 
         if (resultSessions.includes(currentTime)) {
             setTimeout(() => sendResult(period), resultDelay);
         }
     }
 
-    // 🔹 TODAY TEST (ONLY ONCE)
+    // 🔹 Test (14:55 only once)
     if (currentTime === testTime && !testSent) {
+
         const period = await getPeriod();
 
-        sendSession(period);
-
+        await sendSession(period);
         setTimeout(() => sendResult(period), resultDelay);
 
         testSent = true;
-    }
-
-}, 60000);// 🎯 Send result
-function sendResult(period) {
-    const isWin = Math.random() > 0.4;
-
-    const msg = isWin
-        ? `✅ *RESULT: WIN* 🎉\n🧾 *Period ${period}*`
-        : `❌ *RESULT: LOSS*\n🧾 *Period ${period}*`;
-
-    bot.sendMessage(config.channel, msg, { parse_mode: "Markdown" });
-}
-
-// 🧠 Track sessions
-let sentToday = {};
-
-// 🔁 Scheduler
-setInterval(async () => {
-
-    const now = new Date();
-
-    const currentTime =
-        now.getHours().toString().padStart(2, '0') + ":" +
-        now.getMinutes().toString().padStart(2, '0');
-
-    const today = now.toDateString();
-
-    if (!sentToday[today]) {
-        sentToday = {};
-    }
-
-    if (sessionTimes.includes(currentTime) && !sentToday[currentTime]) {
-
-        const period = await getPeriod();
-
-        sendSession(currentTime);
-        sentToday[currentTime] = true;
-
-        if (resultSessions.includes(currentTime)) {
-            setTimeout(() => {
-                sendResult(period);
-            }, resultDelay);
-        }
     }
 
 }, 60000);
