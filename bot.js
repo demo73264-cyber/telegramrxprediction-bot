@@ -2,10 +2,10 @@ const TelegramBot = require('node-telegram-bot-api');
 const config = require('./config');
 const express = require("express");
 
-// 🔹 Bot init
+// 🔹 Bot
 const bot = new TelegramBot(config.token, { polling: false });
 
-// 🔹 Keep Railway alive
+// 🔹 Server (Railway keep alive)
 const app = express();
 app.get("/", (req, res) => res.send("Bot running"));
 app.listen(3000);
@@ -13,7 +13,7 @@ app.listen(3000);
 // 🔗 Link
 const link = "https://www.jaiclub04.com/#/register?invitationCode=376641278237";
 
-// ⏱ Times (IST)
+// ⏱ Times
 const sessionTimes = [
     "09:30",
     "11:30",
@@ -24,17 +24,17 @@ const sessionTimes = [
     "21:30"
 ];
 
-// 🧪 Test time (change anytime)
-const testTime = "00:23";
+// 🧪 Test time
+const testTime = "00:27";
 
 // 🌐 API
 const API_URL = "https://api.bdg88zf.com/api/webapi/GetGameIssue";
 
-// 🧠 TRACKING (only once)
+// 🧠 Tracking
 let sentToday = {};
 let testSent = false;
 
-// ✅ SAFE PERIOD (last 3 digits)
+// ✅ Get last 3 digits of period
 async function getPeriod() {
     try {
         const res = await fetch(API_URL, {
@@ -64,7 +64,7 @@ async function getPeriod() {
     }
 }
 
-// 🎯 SINGLE SHOT (NO SAME NUMBER + BOLD FORMAT)
+// 🎯 Generate one result (NO SAME NUMBER)
 function generateOneShot() {
 
     let isBig = Math.random() > 0.5;
@@ -82,13 +82,13 @@ function generateOneShot() {
         } while (num1 === num2);
     }
 
-    return `**BET ON = ${isBig ? "BIG" : "SMALL"} → ${num1}, ${num2}**`;
+    return `*BET ON = ${isBig ? "BIG" : "SMALL"} → ${num1}, ${num2}*`;
 }
 
-// 📤 SEND MULTIPLE MESSAGES (6–8 TIMES)
+// 📤 Send multiple messages (6 times)
 async function sendSession(period) {
 
-    const totalShots = 6; // change to 7 or 8 if needed
+    const totalShots = 6;
 
     for (let i = 0; i < totalShots; i++) {
 
@@ -99,7 +99,7 @@ async function sendSession(period) {
 🧾 Period: ${period}
 ${generateOneShot()}
 
-**REGISTER NOW**
+*REGISTER NOW*
 ${link}
 `;
 
@@ -111,12 +111,12 @@ ${link}
             console.log("Send Error:", e.message);
         }
 
-        // delay between each message (2 sec)
+        // delay between messages
         await new Promise(resolve => setTimeout(resolve, 2000));
     }
 }
 
-// 🔁 MAIN LOOP (FAST + STABLE)
+// 🔁 Main loop
 setInterval(async () => {
 
     try {
@@ -136,7 +136,7 @@ setInterval(async () => {
 
         console.log("Time:", currentTime);
 
-        // 🔹 DAILY
+        // 🔹 Daily run
         if (sessionTimes.includes(currentTime) && !sentToday[today][currentTime]) {
 
             const period = await getPeriod();
@@ -145,7 +145,7 @@ setInterval(async () => {
             sentToday[today][currentTime] = true;
         }
 
-        // 🔹 TEST (only once)
+        // 🔹 Test run
         if (currentTime === testTime && !testSent) {
 
             const period = await getPeriod();
@@ -159,72 +159,3 @@ setInterval(async () => {
     }
 
 }, 10000); // check every 10 sec
-🚀 *NEW USER REGISTER FAST*
-`;
-
-    try {
-        await bot.sendMessage(config.channel, msg, { parse_mode: "Markdown" });
-    } catch (e) {
-        console.log("Send Error:", e.message);
-    }
-}
-
-// 🎯 Send Result
-function sendResult(period) {
-    const isWin = Math.random() > 0.4;
-
-    const msg = isWin
-        ? `✅ *RESULT: WIN* 🎉\n🧾 *Period ${period}*`
-        : `❌ *RESULT: LOSS*\n🧾 *Period ${period}*`;
-
-    bot.sendMessage(config.channel, msg, { parse_mode: "Markdown" });
-}
-
-// 🧠 TRACKING (ONLY ONE DECLARATION)
-let sentToday = {};
-let testSent = false;
-
-// 🔁 MAIN LOOP
-setInterval(async () => {
-
-    const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-    const date = new Date(now);
-
-    const currentTime =
-        date.getHours().toString().padStart(2, '0') + ":" +
-        date.getMinutes().toString().padStart(2, '0');
-
-    const today = date.toDateString();
-
-    // ✅ Ensure date object exists
-    if (!sentToday[today]) {
-        sentToday[today] = {};
-    }
-
-    console.log("Time:", currentTime);
-
-    // 🔹 DAILY SESSIONS
-    if (sessionTimes.includes(currentTime) && !sentToday[today][currentTime]) {
-
-        const period = await getPeriod();
-
-        await sendSession(period);
-        sentToday[today][currentTime] = true;
-
-        if (resultSessions.includes(currentTime)) {
-            setTimeout(() => sendResult(period), resultDelay);
-        }
-    }
-
-    // 🔹 TEST SESSION (RUN ONCE)
-    if (currentTime === testTime && !testSent) {
-
-        const period = await getPeriod();
-
-        await sendSession(period);
-        setTimeout(() => sendResult(period), resultDelay);
-
-        testSent = true;
-    }
-
-}, 10000); // ⚡ faster check (10 sec)
