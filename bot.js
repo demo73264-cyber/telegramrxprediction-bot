@@ -1,161 +1,127 @@
-const TelegramBot = require('node-telegram-bot-api');
-const config = require('./config');
-const express = require("express");
+const TelegramBot = require("node-telegram-bot-api");
+const fetch = require("node-fetch");
 
-// 🔹 Bot
-const bot = new TelegramBot(config.token, { polling: false });
+// ====== CONFIG ======
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const CHANNEL = "@rajagame_srishti";
 
-// 🔹 Server (Railway keep alive)
-const app = express();
-app.get("/", (req, res) => res.send("Bot running"));
-app.listen(3000);
+const bot = new TelegramBot(BOT_TOKEN);
 
-// 🔗 Link
-const link = "https://www.jaiclub04.com/#/register?invitationCode=376641278237";
-
-// ⏱ Times
-const sessionTimes = [
-    "09:30",
-    "11:30",
-    "13:00",
-    "15:00",
-    "17:00",
-    "19:30",
-    "21:30"
-];
-
-// 🧪 Test time
-const testTime = "05:00";
-
-// 🌐 API
+// ====== API ======
 const API_URL = "https://api.bdg88zf.com/api/webapi/GetGameIssue";
 
-// 🧠 Tracking
-let sentToday = {};
+const API_PAYLOAD = {
+    typeId: 1,
+    language: 0,
+    random: "40079dcba93a48769c6ee9d4d4fae23f",
+    signature: "D12108C4F57C549D82B23A91E0FA20AE",
+    timestamp: Math.floor(Date.now() / 1000)
+};
+
+// ====== CONTROL ======
+let lastPeriod = null;
 let testSent = false;
 
-// ✅ Get last 3 digits of period
+// ====== GET PERIOD FROM API ======
 async function getPeriod() {
     try {
         const res = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                typeId: 1,
-                language: 0,
-                random: "40079dcba93a48769c6ee9d4d4fae23f",
-                signature: "D12108C4F57C549D82B23A91E0FA20AE",
-                timestamp: Math.floor(Date.now() / 1000)
-            })
+            body: JSON.stringify(API_PAYLOAD)
         });
 
         const text = await res.text();
 
-        try {
-            const data = JSON.parse(text);
-            let issue = data?.data?.issueNumber || "000";
-            return issue.toString().slice(-3);
-        } catch {
-            return Math.floor(100 + Math.random() * 900);
+        // Prevent crash if API returns HTML
+        if (!text.startsWith("{")) {
+            console.log("❌ Invalid API response");
+            return null;
         }
 
-    } catch {
-        return Math.floor(100 + Math.random() * 900);
-    }
-}
+        const data = JSON.parse(text);
 
-// 🎯 Generate one result (NO SAME NUMBER)
-function generateOneShot() {
-
-    let isBig = Math.random() > 0.5;
-    let num1, num2;
-
-    if (isBig) {
-        num1 = Math.floor(Math.random() * 5) + 5;
-        do {
-            num2 = Math.floor(Math.random() * 5) + 5;
-        } while (num1 === num2);
-    } else {
-        num1 = Math.floor(Math.random() * 5);
-        do {
-            num2 = Math.floor(Math.random() * 5);
-        } while (num1 === num2);
-    }
-
-    return `*BET ON = ${isBig ? "BIG" : "SMALL"} → ${num1}, ${num2}*`;
-}
-
-// 📤 Send multiple messages (6 times)
-async function sendSession(period) {
-
-    const totalShots = 6;
-
-    for (let i = 0; i < totalShots; i++) {
-
-        const msg = `
-🔥 VIP PREDICTION 🔥
-⏱ WINGO 1 MINUTE
-
-🧾 Period: ${period}
-${generateOneShot()}
-
-*REGISTER NOW*
-${link}
-`;
-
-        try {
-            await bot.sendMessage(config.channel, msg, {
-                parse_mode: "Markdown"
-            });
-        } catch (e) {
-            console.log("Send Error:", e.message);
-        }
-
-        // delay between messages
-        await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-}
-
-// 🔁 Main loop
-setInterval(async () => {
-
-    try {
-
-        const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-        const date = new Date(now);
-
-        const currentTime =
-            date.getHours().toString().padStart(2, '0') + ":" +
-            date.getMinutes().toString().padStart(2, '0');
-
-        const today = date.toDateString();
-
-        if (!sentToday[today]) {
-            sentToday[today] = {};
-        }
-
-        console.log("Time:", currentTime);
-
-        // 🔹 Daily run
-        if (sessionTimes.includes(currentTime) && !sentToday[today][currentTime]) {
-
-            const period = await getPeriod();
-            await sendSession(period);
-
-            sentToday[today][currentTime] = true;
-        }
-
-        // 🔹 Test run
-        if (currentTime === testTime && !testSent) {
-
-            const period = await getPeriod();
-            await sendSession(period);
-
-            testSent = true;
-        }
+        return data?.data?.issueNumber || null;
 
     } catch (err) {
-        console.log("Loop Error:", err.message);
+        console.log("API ERROR:", err);
+        return null;
+    }
+}
+
+// ====== GENERATE 6 PREDICTIONS IN 1 MESSAGE ======
+function generatePredictions(periodLast3) {
+
+    let msg = `🔥 *VIP PREDICTION*\n⌛ *WINGO 1 MINUTE*\n\n📄 Period: ${periodLast3}\n\n`;
+
+    for (let i = 1; i <= 6; i++) {
+
+        const isBig = Math.random() > 0.5;
+
+        let n1, n2;
+
+        if (isBig) {
+            n1 = Math.floor(Math.random() * 5) + 5;
+            do {
+                n2 = Math.floor(Math.random() * 5) + 5;
+            } while (n1 === n2);
+        } else {
+            n1 = Math.floor(Math.random() * 5);
+            do {
+                n2 = Math.floor(Math.random() * 5);
+            } while (n1 === n2);
+        }
+
+        msg += `*BET ON = ${isBig ? "BIG" : "SMALL"} ${n1}, ${n2}*\n\n`;
     }
 
-}, 64000); // check every 64 sec
+    msg += `\n*REGISTER NOW*\nhttps://www.jaiclub04.com/#/register?invitationCode=376641278237`;
+
+    return msg;
+}
+
+// ====== SEND FUNCTION ======
+async function sendPrediction() {
+
+    const fullPeriod = await getPeriod();
+
+    if (!fullPeriod) return;
+
+    // STOP DUPLICATE SEND
+    if (fullPeriod === lastPeriod) return;
+
+    lastPeriod = fullPeriod;
+
+    const last3 = fullPeriod.slice(-3);
+
+    const message = generatePredictions(last3);
+
+    bot.sendMessage(CHANNEL, message, {
+        parse_mode: "Markdown"
+    });
+
+    console.log("✅ Sent for period:", fullPeriod);
+}
+
+// ====== TIME CHECK LOOP ======
+setInterval(() => {
+
+    const now = new Date();
+
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+
+    const currentTime = `${hours}:${minutes}`;
+
+    console.log("Time:", currentTime);
+
+    // ===== TEST TIME =====
+    const testTime = "05:19";
+
+    if (!testSent && currentTime === testTime) {
+        console.log("🚀 TEST TRIGGER");
+        sendPrediction();
+        testSent = true;
+    }
+
+}, 10000);
