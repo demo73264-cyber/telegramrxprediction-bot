@@ -33,8 +33,8 @@ const resultSessions = [
     "21:30"
 ];
 
-// 🧪 TEST TIME (TODAY ONLY)
-const testTime = "14:55";
+// 🧪 Test time
+const testTime = "15:31";
 
 // ⏱ Delay
 const resultDelay = 62000;
@@ -42,6 +42,7 @@ const resultDelay = 62000;
 // 🌐 API
 const API_URL = "https://api.bdg88zf.com/api/webapi/GetGameIssue";
 
+// ✅ SAFE PERIOD FUNCTION (NO CRASH)
 async function getPeriod() {
     try {
         const res = await fetch(API_URL, {
@@ -56,17 +57,24 @@ async function getPeriod() {
             })
         });
 
-        const data = await res.json();
-        let issue = data?.data?.issueNumber || "0000";
-        return issue.toString().slice(-4);
+        const text = await res.text();
+
+        try {
+            const data = JSON.parse(text);
+            let issue = data?.data?.issueNumber || "0000";
+            return issue.toString().slice(-4);
+        } catch {
+            console.log("API returned non-JSON");
+            return Math.floor(1000 + Math.random() * 9000);
+        }
 
     } catch (e) {
         console.log("API Error:", e);
-        return "----";
+        return Math.floor(1000 + Math.random() * 9000);
     }
 }
 
-// 🎯 Shots
+// 🎯 Generate shots
 function generateShots() {
     let shots = [];
 
@@ -101,6 +109,70 @@ async function sendSession(period) {
 🧾 *Period: ${period}*
 
 ${generateShots()}
+
+🚀 *NEW USER REGISTER FAST*
+`;
+    bot.sendMessage(config.channel, msg, { parse_mode: "Markdown" });
+}
+
+// 🎯 Result
+function sendResult(period) {
+    const isWin = Math.random() > 0.4;
+
+    const msg = isWin
+        ? `✅ *RESULT: WIN* 🎉\n🧾 *Period ${period}*`
+        : `❌ *RESULT: LOSS*\n🧾 *Period ${period}*`;
+
+    bot.sendMessage(config.channel, msg, { parse_mode: "Markdown" });
+}
+
+// 🧠 Tracking
+let sentToday = {};
+let testSent = false;
+
+// 🔁 LOOP
+setInterval(async () => {
+
+    const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    const date = new Date(now);
+
+    const currentTime =
+        date.getHours().toString().padStart(2, '0') + ":" +
+        date.getMinutes().toString().padStart(2, '0');
+
+    const today = date.toDateString();
+
+    if (!sentToday[today]) {
+        sentToday[today] = {};
+    }
+
+    console.log("Time:", currentTime);
+
+    // 🔹 Daily sessions
+    if (sessionTimes.includes(currentTime) && !sentToday[today][currentTime]) {
+
+        const period = await getPeriod();
+
+        await sendSession(period);
+        sentToday[today][currentTime] = true;
+
+        if (resultSessions.includes(currentTime)) {
+            setTimeout(() => sendResult(period), resultDelay);
+        }
+    }
+
+    // 🔹 Test session
+    if (currentTime === testTime && !testSent) {
+
+        const period = await getPeriod();
+
+        await sendSession(period);
+        setTimeout(() => sendResult(period), resultDelay);
+
+        testSent = true;
+    }
+
+}, 60000);${generateShots()}
 
 🚀 *NEW USER REGISTER FAST*
 `;
@@ -154,7 +226,7 @@ setInterval(async () => {
         }
     }
 
-    // 🔹 Test (14:55 only once)
+    // 🔹 Test (15:31 only once)
     if (currentTime === testTime && !testSent) {
 
         const period = await getPeriod();
