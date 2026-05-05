@@ -34,7 +34,7 @@ const resultSessions = [
 ];
 
 // 🧪 Test time (change anytime)
-const testTime = "00:10";
+const testTime = "00:07";
 
 // ⏱ Delay
 const resultDelay = 62000;
