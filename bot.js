@@ -1,28 +1,14 @@
 const TelegramBot = require("node-telegram-bot-api");
 
-// ================= CONFIG =================
+// ===== CONFIG =====
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHANNEL = "@rajagame_srishti";
 
-// Daily session times (24-hour format, IST)
-const DAILY_TIMES = [
-  "09:30",
-  "11:30",
-  "13:00",
-  "15:00",
-  "17:00",
-  "19:30",
-  "21:30"
-];
+const TEST_TIME = "05:35"; // ✅ IST time
 
-// TEST TIME (change anytime)
-const TEST_TIME = "05:27";
-
-// How many predictions per session
 const SHOTS_PER_SESSION = 6;
 
-// ==========================================
-
+// ===== INIT =====
 const bot = new TelegramBot(BOT_TOKEN);
 
 // ===== API =====
@@ -38,36 +24,40 @@ function getPayload() {
   };
 }
 
-// ===== STATE CONTROL =====
+// ===== STATE =====
 let lastPeriod = null;
-let sentToday = {}; // track time-based sends
+let testSent = false;
 
 // ===== FETCH PERIOD =====
 async function getPeriod() {
   try {
     const res = await fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify(getPayload())
     });
 
     const text = await res.text();
 
-    if (!text.startsWith("{")) {
-      console.log("Invalid API response");
+    // Prevent crash if API returns HTML
+    if (!text || !text.startsWith("{")) {
+      console.log("❌ Invalid API response");
       return null;
     }
 
     const data = JSON.parse(text);
+
     return data?.data?.issueNumber || null;
 
-  } catch (e) {
-    console.log("API ERROR:", e);
+  } catch (err) {
+    console.log("API ERROR:", err);
     return null;
   }
 }
 
-// ===== GENERATE SINGLE RESULT =====
+// ===== GENERATE SINGLE =====
 function generateSingle() {
   const isBig = Math.random() > 0.5;
 
@@ -88,7 +78,7 @@ function generateSingle() {
   return `*BET ON = ${isBig ? "BIG" : "SMALL"} ${n1}, ${n2}*`;
 }
 
-// ===== GENERATE FULL MESSAGE =====
+// ===== GENERATE MESSAGE =====
 function generateMessage(periodLast3) {
   let msg = `🔥 *VIP PREDICTION*\n⌛ *WINGO 1 MINUTE*\n\n📄 Period: ${periodLast3}\n\n`;
 
@@ -101,6 +91,55 @@ function generateMessage(periodLast3) {
   return msg;
 }
 
+// ===== SEND =====
+async function sendPrediction() {
+  const fullPeriod = await getPeriod();
+
+  if (!fullPeriod) return;
+
+  // prevent duplicate
+  if (fullPeriod === lastPeriod) return;
+
+  lastPeriod = fullPeriod;
+
+  const last3 = fullPeriod.slice(-3);
+
+  const message = generateMessage(last3);
+
+  try {
+    await bot.sendMessage(CHANNEL, message, {
+      parse_mode: "Markdown"
+    });
+
+    console.log("✅ Sent for period:", fullPeriod);
+
+  } catch (err) {
+    console.log("❌ Telegram Error:", err.message);
+  }
+}
+
+// ===== TIME LOOP (IST FIXED) =====
+setInterval(() => {
+
+  // ✅ IST TIME FIX
+  const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+  const date = new Date(now);
+
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  const currentTime = `${hours}:${minutes}`;
+
+  console.log("Time:", currentTime);
+
+  // ===== TEST TRIGGER =====
+  if (!testSent && currentTime === TEST_TIME) {
+    console.log("🚀 TEST TRIGGER");
+    sendPrediction();
+    testSent = true;
+  }
+
+}, 10000);
 // ===== SEND =====
 async function sendPrediction(triggerLabel) {
   const fullPeriod = await getPeriod();
